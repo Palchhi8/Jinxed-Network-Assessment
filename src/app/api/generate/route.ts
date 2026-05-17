@@ -1,13 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { GenerationStatus } from '@prisma/client';
+import { generateImage } from '@/lib/fal';
 
 export async function POST(req: NextRequest) {
   let createdGenerationId: string | null = null;
 
   try {
     const body = await req.json().catch(() => ({}));
-    const { prompt, model = 'mock-model', settings, parentId } = body;
+    const { prompt, model = 'fal-ai/flux/schnell', settings, parentId } = body;
 
     // 1. Validation
     if (!prompt || typeof prompt !== 'string' || prompt.trim() === '') {
@@ -17,11 +18,14 @@ export async function POST(req: NextRequest) {
       );
     }
 
+    // Map mock models to real Fal model identifier
+    const resolvedModel = model.includes('mock') ? 'fal-ai/flux/schnell' : model;
+
     // 2. Create Generation record in Prisma with PROCESSING status
     const generation = await prisma.generation.create({
       data: {
         prompt: prompt.trim(),
-        model,
+        model: resolvedModel,
         status: GenerationStatus.PROCESSING,
         settings: settings || null,
         parentId: parentId || null,
@@ -30,45 +34,38 @@ export async function POST(req: NextRequest) {
 
     createdGenerationId = generation.id;
 
-    // 3. Simulate AI generation compute delay (2.5 seconds)
-    await new Promise((resolve) => setTimeout(resolve, 2500));
+    // 3. Call Fal.ai Flux Schnell image generation
+    const falOptions = {
+      prompt: prompt.trim(),
+      aspectRatio: settings?.aspectRatio || '16:9',
+      steps: settings?.steps || 4,
+      guidanceScale: settings?.guidanceScale || 7.5,
+      seed: typeof settings?.seed === 'number' ? settings.seed : undefined,
+    };
 
-    // 4. Determine realistic placeholder image depending on prompt contents
-    const normalizedPrompt = prompt.toLowerCase();
-    let selectedPlaceholder = '/placeholders/placeholder_3.png'; // default: workspace
+    const falResult = await generateImage(falOptions);
 
-    if (
-      normalizedPrompt.includes('city') ||
-      normalizedPrompt.includes('cyber') ||
-      normalizedPrompt.includes('neon') ||
-      normalizedPrompt.includes('street')
-    ) {
-      selectedPlaceholder = '/placeholders/placeholder_1.png'; // Cyberpunk City
-    } else if (
-      normalizedPrompt.includes('forest') ||
-      normalizedPrompt.includes('nature') ||
-      normalizedPrompt.includes('tree') ||
-      normalizedPrompt.includes('mystic') ||
-      normalizedPrompt.includes('glow')
-    ) {
-      selectedPlaceholder = '/placeholders/placeholder_2.png'; // Mystical Forest
-    } else {
-      // Pick random placeholder for generic prompts
-      const index = Math.floor(Math.random() * 3) + 1;
-      selectedPlaceholder = `/placeholders/placeholder_${index}.png`;
-    }
+    // Update settings payload with the actual seed returned by Fal.ai
+    const updatedSettings = settings ? {
+      ...settings,
+      seed: falResult.seed,
+    } : {
+      seed: falResult.seed,
+    };
 
-    // 5. Update Generation status to COMPLETED with generated image URL
+    // 4. Update Generation status to COMPLETED with real generated image URL and seed
     const completedGeneration = await prisma.generation.update({
       where: { id: createdGenerationId },
       data: {
         status: GenerationStatus.COMPLETED,
-        imageUrl: selectedPlaceholder,
+        imageUrl: falResult.imageUrl,
+        settings: updatedSettings,
       },
     });
 
-    // 6. Return the completed generation object
+    // 5. Return the completed generation object
     return NextResponse.json(completedGeneration, { status: 200 });
+
 
   } catch (error) {
     console.error('Error in generation API route:', error);
