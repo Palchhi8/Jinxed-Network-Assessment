@@ -97,6 +97,9 @@ export async function POST(req: NextRequest) {
 export async function GET() {
   try {
     const generations = await prisma.generation.findMany({
+      where: {
+        status: GenerationStatus.COMPLETED,
+      },
       orderBy: {
         createdAt: 'desc',
       },
