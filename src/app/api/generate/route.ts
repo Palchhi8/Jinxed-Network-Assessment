@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { GenerationStatus } from '@prisma/client';
-import { generateImage } from '@/lib/fal';
+import { generateImage } from '@/lib/huggingface';
 
 export async function POST(req: NextRequest) {
   let createdGenerationId: string | null = null;
 
   try {
     const body = await req.json().catch(() => ({}));
-    const { prompt, model = 'fal-ai/flux/schnell', settings, parentId } = body;
+    const { prompt, model = 'stabilityai/sdxl-turbo', settings, parentId } = body;
 
     // 1. Validation
     if (!prompt || typeof prompt !== 'string' || prompt.trim() === '') {
@@ -18,8 +18,8 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Map mock models to real Fal model identifier
-    const resolvedModel = model.includes('mock') ? 'fal-ai/flux/schnell' : model;
+    // Map mock and Fal models to the free Hugging Face SDXL Turbo model identifier
+    const resolvedModel = model.includes('mock') || model.includes('fal') ? 'stabilityai/sdxl-turbo' : model;
 
     // 2. Create Generation record in Prisma with PROCESSING status
     const generation = await prisma.generation.create({
@@ -34,31 +34,29 @@ export async function POST(req: NextRequest) {
 
     createdGenerationId = generation.id;
 
-    // 3. Call Fal.ai Flux Schnell image generation
-    const falOptions = {
+    // 3. Call Hugging Face SDXL Turbo image generation
+    const hfOptions = {
       prompt: prompt.trim(),
       aspectRatio: settings?.aspectRatio || '16:9',
-      steps: settings?.steps || 4,
-      guidanceScale: settings?.guidanceScale || 7.5,
       seed: typeof settings?.seed === 'number' ? settings.seed : undefined,
     };
 
-    const falResult = await generateImage(falOptions);
+    const hfResult = await generateImage(hfOptions);
 
-    // Update settings payload with the actual seed returned by Fal.ai
+    // Update settings payload with the actual seed returned by Hugging Face
     const updatedSettings = settings ? {
       ...settings,
-      seed: falResult.seed,
+      seed: hfResult.seed,
     } : {
-      seed: falResult.seed,
+      seed: hfResult.seed,
     };
 
-    // 4. Update Generation status to COMPLETED with real generated image URL and seed
+    // 4. Update Generation status to COMPLETED with real Base64 Data URL and seed
     const completedGeneration = await prisma.generation.update({
       where: { id: createdGenerationId },
       data: {
         status: GenerationStatus.COMPLETED,
-        imageUrl: falResult.imageUrl,
+        imageUrl: hfResult.imageUrl,
         settings: updatedSettings,
       },
     });
