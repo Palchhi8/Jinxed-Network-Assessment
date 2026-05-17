@@ -54,22 +54,40 @@ export default function Home() {
 
   // Fetch all generations from database on component mount
   useEffect(() => {
-    const fetchGenerations = async () => {
+    let active = true;
+    const fetchOnMount = async () => {
       try {
         const response = await fetch('/api/generate');
-        if (response.ok) {
+        if (response.ok && active) {
           const data = await response.json();
           setGenerationHistory(data);
         }
       } catch (err) {
         console.error('Failed to load gallery history:', err);
       } finally {
-        setIsGalleryLoading(false);
+        if (active) {
+          setIsGalleryLoading(false);
+        }
       }
     };
-
-    fetchGenerations();
+    fetchOnMount();
+    return () => {
+      active = false;
+    };
   }, []);
+
+  // Helper to refresh gallery after dynamic event triggers (like prompt execution)
+  const refreshGallery = async () => {
+    try {
+      const response = await fetch('/api/generate');
+      if (response.ok) {
+        const data = await response.json();
+        setGenerationHistory(data);
+      }
+    } catch (err) {
+      console.error('Failed to refresh gallery:', err);
+    }
+  };
 
   // Advanced configurations
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -132,12 +150,17 @@ export default function Home() {
         throw new Error(data.error || 'Generative workflow crashed unexpectedly.');
       }
 
-      // Add to generation record and history list
+      // Add to generation record
       setCurrentGeneration(data);
-      setGenerationHistory(prev => [data, ...prev]);
+      
+      // Refresh the gallery instantly from the backend
+      await refreshGallery();
     } catch (err) {
       console.error(err);
       setError(err instanceof Error ? err.message : 'Failed to communicate with the mock generator endpoint.');
+      
+      // Refresh the gallery even on failure to show the FAILED record immediately
+      await refreshGallery();
     } finally {
       setIsGenerating(false);
       setLoadingStatus('');
