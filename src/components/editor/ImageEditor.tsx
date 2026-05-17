@@ -160,6 +160,12 @@ export function ImageEditor({ imageUrl, prompt, onClose }: ImageEditorProps) {
       transparentCorners: false,
       borderStrokeWidth: 1,
       borderColor: '#a78bfa',
+      shadow: new fabricModule.Shadow({
+        color: 'rgba(0,0,0,0.8)',
+        blur: 6,
+        offsetX: 0,
+        offsetY: 2
+      })
     });
 
     canvasInstance.add(text);
@@ -236,8 +242,8 @@ export function ImageEditor({ imageUrl, prompt, onClose }: ImageEditorProps) {
       link.href = dataUrl;
       link.click();
       
-      toast.success('Edited image downloaded!', {
-        description: 'Canvas layers flattened into export asset.',
+      toast.success('Image exported successfully', {
+        duration: 3000,
       });
     } catch (err) {
       console.error('Failed to export canvas image:', err);
@@ -249,7 +255,7 @@ export function ImageEditor({ imageUrl, prompt, onClose }: ImageEditorProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 lg:p-8 bg-zinc-950/80 backdrop-blur-md animate-in fade-in duration-300">
       <div 
         ref={containerRef}
-        className="w-full max-w-6xl bg-zinc-900 border border-zinc-800/80 rounded-2xl shadow-2xl shadow-zinc-950/50 overflow-hidden flex flex-col lg:flex-row max-h-[95vh] lg:max-h-[85vh]"
+        className="w-full max-w-6xl bg-zinc-900 border border-zinc-800/80 rounded-2xl shadow-2xl shadow-zinc-950/50 overflow-hidden flex flex-col lg:flex-row max-h-[95vh] lg:max-h-[85vh] animate-in zoom-in-95 duration-300 ease-out"
       >
         {/* Left Side: Canvas Studio Workspace */}
         <div className="flex-[2] p-6 lg:p-8 bg-zinc-950 flex flex-col items-center justify-center border-b lg:border-b-0 lg:border-r border-zinc-800/60 relative overflow-y-auto min-h-[40vh] lg:min-h-[600px]">
@@ -315,59 +321,69 @@ export function ImageEditor({ imageUrl, prompt, onClose }: ImageEditorProps) {
                 <span className="h-px bg-zinc-800 flex-1"></span>
               </h4>
 
-              {/* Font Size slider */}
-              <div className="space-y-2 bg-zinc-950/40 p-4 rounded-xl border border-zinc-800/60">
-                <div className="flex justify-between items-center text-xs">
-                  <span className="text-zinc-400 font-semibold">Scale / Size</span>
-                  <span className="text-zinc-300 font-mono font-bold px-1.5 py-0.5 bg-zinc-900 border border-zinc-800 rounded">{fontSize}px</span>
+              {!hasActiveObject ? (
+                <div className="bg-zinc-950/40 rounded-xl border border-zinc-800/60 p-5 text-center shadow-inner">
+                  <p className="text-xs text-zinc-400 leading-relaxed italic">
+                    Add text overlays to personalize your AI artwork.
+                  </p>
                 </div>
-                <input
-                  type="range"
-                  min="12"
-                  max="120"
-                  value={fontSize}
-                  onChange={(e) => handleFontSizeChange(parseInt(e.target.value))}
-                  className="w-full accent-violet-500 hover:accent-violet-400 h-1.5 rounded-lg bg-zinc-800 cursor-pointer transition-all duration-200"
-                />
-              </div>
-
-              {/* Font Weight */}
-              <div className="flex items-center justify-between text-xs bg-zinc-950/40 p-3.5 rounded-xl border border-zinc-800/60">
-                <span className="text-zinc-400 font-semibold">Strong Weight</span>
-                <button
-                  onClick={handleToggleBold}
-                  className={`h-8 w-8 rounded-md border flex items-center justify-center transition-all cursor-pointer shadow-sm ${
-                    isBold
-                      ? 'bg-violet-600 border-violet-500 text-white shadow-violet-900/50'
-                      : 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
-                  }`}
-                >
-                  <Bold className="h-4 w-4" />
-                </button>
-              </div>
-
-              {/* Color Presets */}
-              <div className="space-y-3 bg-zinc-950/40 p-4 rounded-xl border border-zinc-800/60">
-                <span className="text-xs font-semibold text-zinc-400 flex items-center gap-1.5">
-                  <Palette className="h-3.5 w-3.5 text-zinc-500" />
-                  <span>Color Palette</span>
-                </span>
-                <div className="grid grid-cols-6 gap-2">
-                  {PRESET_COLORS.map((preset) => (
-                    <button
-                      key={preset.value}
-                      onClick={() => handleColorChange(preset.value)}
-                      style={{ backgroundColor: preset.value }}
-                      className={`h-7 rounded-md border-2 cursor-pointer transition-all shadow-sm ${
-                        textColor.toLowerCase() === preset.value.toLowerCase()
-                          ? 'border-zinc-200 ring-2 ring-violet-500/50 scale-110 z-10'
-                          : 'border-zinc-800/50 hover:scale-105'
-                      }`}
-                      title={preset.name}
+              ) : (
+                <>
+                  {/* Font Size slider */}
+                  <div className="space-y-2 bg-zinc-950/40 p-4 rounded-xl border border-zinc-800/60 shadow-inner">
+                    <div className="flex justify-between items-center text-xs">
+                      <span className="text-zinc-400 font-semibold">Scale / Size</span>
+                      <span className="text-zinc-300 font-mono font-bold px-1.5 py-0.5 bg-zinc-900 border border-zinc-800 rounded">{fontSize}px</span>
+                    </div>
+                    <input
+                      type="range"
+                      min="12"
+                      max="120"
+                      value={fontSize}
+                      onChange={(e) => handleFontSizeChange(parseInt(e.target.value))}
+                      className="w-full accent-violet-500 hover:accent-violet-400 h-1.5 rounded-lg bg-zinc-800 cursor-pointer transition-all duration-200"
                     />
-                  ))}
-                </div>
-              </div>
+                  </div>
+
+                  {/* Font Weight */}
+                  <div className="flex items-center justify-between text-xs bg-zinc-950/40 p-3.5 rounded-xl border border-zinc-800/60 shadow-inner">
+                    <span className="text-zinc-400 font-semibold">Strong Weight</span>
+                    <button
+                      onClick={handleToggleBold}
+                      className={`h-8 w-8 rounded-md border flex items-center justify-center transition-all duration-200 cursor-pointer shadow-sm ${
+                        isBold
+                          ? 'bg-violet-600 border-violet-500 text-white shadow-[0_0_15px_rgba(139,92,246,0.5)]'
+                          : 'bg-zinc-900 border-zinc-700 text-zinc-400 hover:text-zinc-200 hover:bg-zinc-800'
+                      }`}
+                    >
+                      <Bold className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {/* Color Presets */}
+                  <div className="space-y-3 bg-zinc-950/40 p-4 rounded-xl border border-zinc-800/60 shadow-inner">
+                    <span className="text-xs font-semibold text-zinc-400 flex items-center gap-1.5">
+                      <Palette className="h-3.5 w-3.5 text-zinc-500" />
+                      <span>Color Palette</span>
+                    </span>
+                    <div className="grid grid-cols-6 gap-2">
+                      {PRESET_COLORS.map((preset) => (
+                        <button
+                          key={preset.value}
+                          onClick={() => handleColorChange(preset.value)}
+                          style={{ backgroundColor: preset.value }}
+                          className={`h-7 rounded-md border-2 cursor-pointer transition-all duration-200 shadow-sm ${
+                            textColor.toLowerCase() === preset.value.toLowerCase()
+                              ? 'border-zinc-200 ring-2 ring-violet-500/50 scale-110 z-10 shadow-[0_0_10px_rgba(255,255,255,0.3)]'
+                              : 'border-zinc-800/50 hover:scale-105'
+                          }`}
+                          title={preset.name}
+                        />
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -375,14 +391,14 @@ export function ImageEditor({ imageUrl, prompt, onClose }: ImageEditorProps) {
           <div className="border-t border-zinc-800/80 pt-6 mt-6 space-y-3">
             <button
               onClick={handleExport}
-              className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 via-fuchsia-600 to-pink-600 hover:from-violet-500 hover:to-pink-500 px-4 py-4 text-sm font-bold text-white shadow-lg transition-all duration-200 cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 via-fuchsia-600 to-pink-600 hover:from-violet-500 hover:to-pink-500 px-4 py-4 text-sm font-bold text-white shadow-lg shadow-violet-900/30 transition-all duration-300 hover:shadow-[0_0_20px_rgba(217,70,239,0.4)] cursor-pointer"
             >
               <Download className="h-4 w-4" />
-              <span>Export High-Res Render</span>
+              <span>Export Final Image</span>
             </button>
             <button
               onClick={onClose}
-              className="w-full flex items-center justify-center gap-2 rounded-xl border border-zinc-700 bg-zinc-800/50 hover:bg-zinc-800 hover:text-white hover:border-zinc-600 px-4 py-3.5 text-xs font-semibold text-zinc-300 transition-all cursor-pointer shadow-sm"
+              className="w-full flex items-center justify-center gap-2 rounded-xl border border-zinc-700 bg-zinc-800/50 hover:bg-zinc-800 hover:text-white hover:border-zinc-600 px-4 py-3.5 text-xs font-semibold text-zinc-300 transition-all duration-200 cursor-pointer shadow-sm hover:shadow-md"
             >
               <span>Close Workspace</span>
             </button>
