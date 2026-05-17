@@ -15,6 +15,7 @@ import {
 import { Generation, GenerationSettings } from '@/types';
 import { GallerySection } from '@/components/GallerySection';
 import { Toaster, toast } from 'sonner';
+import { ImageEditor } from '@/components/editor/ImageEditor';
 
 const SUGGESTIONS = [
   {
@@ -52,6 +53,7 @@ export default function Home() {
   const [generationHistory, setGenerationHistory] = useState<Generation[]>([]);
   const [isGalleryLoading, setIsGalleryLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [editingGeneration, setEditingGeneration] = useState<Generation | null>(null);
 
   // Fetch all generations from database on component mount
   useEffect(() => {
@@ -516,9 +518,19 @@ export default function Home() {
           generations={generationHistory}
           isLoading={isGalleryLoading}
           onTweak={handleTweak}
+          onEdit={setEditingGeneration}
           isGenerating={isGenerating}
         />
       </Container>
+      
+      {/* Dynamic Image Editor Canvas Overlay */}
+      {editingGeneration && (
+        <ImageEditor
+          imageUrl={editingGeneration.imageUrl || ''}
+          prompt={editingGeneration.prompt}
+          onClose={() => setEditingGeneration(null)}
+        />
+      )}
       
       {/* Toast provider container */}
       <Toaster theme="dark" position="bottom-right" richColors closeButton />

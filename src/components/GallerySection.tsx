@@ -6,10 +6,11 @@ interface GallerySectionProps {
   generations: Generation[];
   isLoading: boolean;
   onTweak: (item: Generation) => void;
+  onEdit?: (item: Generation) => void;
   isGenerating?: boolean;
 }
 
-export function GallerySection({ generations, isLoading, onTweak, isGenerating }: GallerySectionProps) {
+export function GallerySection({ generations, isLoading, onTweak, onEdit, isGenerating }: GallerySectionProps) {
   return (
     <div className="space-y-6 border-t border-zinc-850 pt-8 animate-in fade-in duration-300">
       <div className="flex items-center justify-between">
@@ -67,6 +68,7 @@ export function GallerySection({ generations, isLoading, onTweak, isGenerating }
               key={item.id}
               item={item}
               onTweak={onTweak}
+              onEdit={onEdit}
               disabled={isGenerating}
             />
           ))}

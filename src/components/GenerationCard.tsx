@@ -4,10 +4,11 @@ import { Download, RefreshCcw, Check, Loader2, AlertTriangle } from 'lucide-reac
 interface GenerationCardProps {
   item: Generation;
   onTweak: (item: Generation) => void;
+  onEdit?: (item: Generation) => void;
   disabled?: boolean;
 }
 
-export function GenerationCard({ item, onTweak, disabled }: GenerationCardProps) {
+export function GenerationCard({ item, onTweak, onEdit, disabled }: GenerationCardProps) {
   const settings = item.settings as GenerationSettings | null;
 
   const formattedTime = new Date(item.createdAt).toLocaleTimeString([], {
@@ -40,6 +41,17 @@ export function GenerationCard({ item, onTweak, disabled }: GenerationCardProps)
                 >
                   <Download className="h-4 w-4" />
                 </a>
+                {onEdit && (
+                  <button
+                    onClick={() => onEdit(item)}
+                    className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-900 border border-zinc-850 text-zinc-200 hover:text-white hover:border-violet-500/40 hover:bg-violet-950/10 transition-all duration-200 cursor-pointer"
+                    title="Edit Overlay"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                    </svg>
+                  </button>
+                )}
               </div>
             </>
           ) : item.status === 'PROCESSING' ? (
@@ -91,15 +103,27 @@ export function GenerationCard({ item, onTweak, disabled }: GenerationCardProps)
             <span>{item.status}</span>
           </span>
 
-          {/* Tweak Button */}
-          <button
-            onClick={() => onTweak(item)}
-            disabled={disabled}
-            className="flex items-center gap-1 text-[10px] text-violet-400 hover:text-violet-300 font-bold disabled:opacity-50 transition-colors cursor-pointer"
-          >
-            <RefreshCcw className="h-3 w-3" />
-            <span>Tweak Parameters</span>
-          </button>
+          <div className="flex items-center gap-3">
+            {item.status === 'COMPLETED' && onEdit && (
+              <button
+                onClick={() => onEdit(item)}
+                disabled={disabled}
+                className="flex items-center gap-1 text-[10px] text-zinc-400 hover:text-zinc-300 font-semibold disabled:opacity-50 transition-colors cursor-pointer"
+              >
+                <span>Edit</span>
+              </button>
+            )}
+
+            {/* Tweak Button */}
+            <button
+              onClick={() => onTweak(item)}
+              disabled={disabled}
+              className="flex items-center gap-1 text-[10px] text-violet-400 hover:text-violet-300 font-bold disabled:opacity-50 transition-colors cursor-pointer"
+            >
+              <RefreshCcw className="h-3 w-3" />
+              <span>Tweak</span>
+            </button>
+          </div>
         </div>
       </div>
     </div>
