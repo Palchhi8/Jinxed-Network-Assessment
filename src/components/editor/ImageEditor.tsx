@@ -93,9 +93,9 @@ export function ImageEditor({ imageUrl, prompt, onClose }: ImageEditorProps) {
         });
 
         // 6. Call renderAll
-        // Use add and sendToBack instead of backgroundImage so originX/Y logic executes flawlessly
+        // Use add and sendObjectToBack instead of backgroundImage so originX/Y logic executes flawlessly
         fabricCanvas.add(img);
-        fabricCanvas.sendToBack(img);
+        fabricCanvas.sendObjectToBack(img);
         fabricCanvas.renderAll();
 
         // Configure event listeners to capture selected text states
