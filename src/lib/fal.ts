@@ -12,6 +12,12 @@ export interface GenerateImageOptions {
 export interface GenerateImageResult {
   imageUrl: string;
   seed: number;
+  model: string;
+  metadata?: {
+    width?: number;
+    height?: number;
+    contentType?: string;
+  };
 }
 
 /**
@@ -30,7 +36,12 @@ function mapAspectRatio(ratio: string): 'square_hd' | 'square' | 'portrait_4_3' 
 }
 
 interface FalImageResponse {
-  images: Array<{ url: string }>;
+  images: Array<{
+    url: string;
+    width?: number;
+    height?: number;
+    content_type?: string;
+  }>;
   seed?: number;
 }
 
@@ -44,11 +55,35 @@ export async function generateImage(options: GenerateImageOptions): Promise<Gene
     seed,
   } = options;
 
+  console.log('[Fal.ai Provider] Starting generation request...');
+  console.log('[Fal.ai Provider] Prompt:', prompt);
+  console.log('[Fal.ai Provider] Input Aspect Ratio:', aspectRatio);
+
+  // 1. Environment Key Validation
+  const apiKey = process.env.FAL_KEY || process.env.FAL_API_KEY;
+  if (!apiKey) {
+    const errorMsg = 'FAL_KEY environment variable is not defined or is empty in .env. Please configure it to authorize AI generation.';
+    console.error('[Fal.ai Provider] Validation Error:', errorMsg);
+    throw new Error(errorMsg);
+  }
+
+  // 2. Explicit Client Authorization Setup
+  try {
+    fal.config({
+      credentials: apiKey,
+    });
+  } catch (configError) {
+    console.warn('[Fal.ai Provider] Warning: Failed to configure credentials explicitly:', configError);
+  }
+
   const imageSize = mapAspectRatio(aspectRatio);
+  const targetModel = 'fal-ai/flux/schnell';
 
   try {
-    // Invoke the Flux Schnell model via Fal.ai API
-    const response = await fal.subscribe('fal-ai/flux/schnell', {
+    console.log(`[Fal.ai Provider] Querying model "${targetModel}" on size: "${imageSize}"...`);
+
+    // 3. Invoke the Flux Schnell model via Fal.ai API
+    const response = await fal.subscribe(targetModel, {
       input: {
         prompt,
         image_size: imageSize,
@@ -60,21 +95,41 @@ export async function generateImage(options: GenerateImageOptions): Promise<Gene
       logs: false,
     });
 
+    console.log('[Fal.ai Provider] Raw response received successfully.');
+
+    // 4. Robust Response JSON Parsing & Extraction
     const data = response.data as FalImageResponse;
-    
-    if (!data || !data.images || data.images.length === 0) {
-      throw new Error('Fal.ai returned a response with no images.');
+    if (!data) {
+      throw new Error('Fal.ai returned an empty or malformed JSON body payload.');
     }
 
-    const imageUrl = data.images[0].url;
+    if (!data.images || !Array.isArray(data.images) || data.images.length === 0) {
+      throw new Error('Fal.ai response is missing the target images list array or returned empty outputs.');
+    }
+
+    const firstImage = data.images[0];
+    if (!firstImage || typeof firstImage.url !== 'string' || firstImage.url.trim() === '') {
+      throw new Error('Fal.ai response image object is missing a valid destination URL property.');
+    }
+
+    const imageUrl = firstImage.url;
     const responseSeed = typeof data.seed === 'number' ? data.seed : (seed || 0);
+
+    console.log('[Fal.ai Provider] Successfully extracted Image URL:', imageUrl);
+    console.log('[Fal.ai Provider] Seed:', responseSeed);
 
     return {
       imageUrl,
       seed: responseSeed,
+      model: targetModel,
+      metadata: {
+        width: firstImage.width,
+        height: firstImage.height,
+        contentType: firstImage.content_type,
+      },
     };
   } catch (error) {
-    console.error('Fal.ai image generation failure:', error);
-    throw new Error(error instanceof Error ? error.message : 'Fal.ai image generation failed.');
+    console.error('[Fal.ai Provider] API Request Failure:', error);
+    throw new Error(error instanceof Error ? error.message : 'Fal.ai image generation API failed.');
   }
 }
