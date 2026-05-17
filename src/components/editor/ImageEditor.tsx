@@ -48,13 +48,11 @@ export function ImageEditor({ imageUrl, prompt, onClose }: ImageEditorProps) {
 
         if (!active || !canvasRef.current || !containerRef.current) return;
 
-        // 1. Calculate max available bounds from the flex container (Left Side panel)
-        // In our desktop layout, the left flex-1 container should be able to expand.
-        // We'll use 800x600 as max inner dimensions to ensure premium visual balance.
-        const maxWidth = 800;
-        const maxHeight = 600;
+        // 1. Detect and calculate container bounds safely
+        const containerWidth = containerRef.current ? Math.floor(containerRef.current.clientWidth * 0.6) : 800;
+        const containerHeight = containerRef.current ? Math.floor(containerRef.current.clientHeight * 0.8) : 600;
 
-        // 2. Load background image first to read natural dimensions
+        // 2. Detect original image width and height
         const img = await fabricModule.FabricImage.fromURL(imageUrl, {
           crossOrigin: 'anonymous',
         });
@@ -63,35 +61,41 @@ export function ImageEditor({ imageUrl, prompt, onClose }: ImageEditorProps) {
           return;
         }
 
-        // 3. Calculate optimal scale to fit image completely without empty background space
-        const scaleX = maxWidth / img.width!;
-        const scaleY = maxHeight / img.height!;
-        // Use the smaller scale so it fits both bounds, and cap at 1 to prevent upscale blurring
-        const scale = Math.min(scaleX, scaleY, 1);
+        // 3. Apply proportional scaling logic to container limits
+        const scaleX = containerWidth / img.width!;
+        const scaleY = containerHeight / img.height!;
+        // Use Math.min to constrain dimensions within view while keeping aspect ratio intact
+        const scaleFactor = Math.min(scaleX, scaleY, 1);
 
-        // 4. Set exact canvas dimensions dynamically locking tightly to the image
-        const canvasW = img.width! * scale;
-        const canvasH = img.height! * scale;
+        // Shrink-wrap the canvas exactly to the new scaled dimensions to drop all empty black space
+        const canvasWidth = img.width! * scaleFactor;
+        const canvasHeight = img.height! * scaleFactor;
 
-        // Initialize Fabric Canvas instance precisely sized to the image
+        // Initialize Fabric Canvas instance
         fabricCanvas = new fabricModule.Canvas(canvasRef.current, {
-          width: canvasW,
-          height: canvasH,
-          selection: false, // Cleaner editor selection behavior
+          width: canvasWidth,
+          height: canvasHeight,
+          selection: false,
+          backgroundColor: '#09090b',
         });
 
-        // 5. Scale image to exact canvas dimensions and position at origin
+        // 4. Apply scale to the fabric image object natively
+        img.scale(scaleFactor);
+
+        // 5. Center image perfectly using center origins
         img.set({
-          scaleX: scale,
-          scaleY: scale,
-          left: 0,
-          top: 0,
+          left: canvasWidth / 2,
+          top: canvasHeight / 2,
+          originX: 'center',
+          originY: 'center',
           selectable: false,
           evented: false,
         });
 
-        // Use backgroundImage property for pristine rendering and no layer conflicts
-        fabricCanvas.backgroundImage = img;
+        // 6. Call renderAll
+        // Use add and sendToBack instead of backgroundImage so originX/Y logic executes flawlessly
+        fabricCanvas.add(img);
+        fabricCanvas.sendToBack(img);
         fabricCanvas.renderAll();
 
         // Configure event listeners to capture selected text states
