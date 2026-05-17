@@ -1,0 +1,33 @@
+datasource db {
+  provider = "postgresql"
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum GenerationStatus {
+  PENDING
+  PROCESSING
+  COMPLETED
+  FAILED
+}
+
+model Generation {
+  id        String           @id @default(cuid())
+  prompt    String           @db.Text
+  imageUrl  String?          @db.Text
+  status    GenerationStatus @default(PENDING)
+  model     String
+  settings  Json?
+  parentId  String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+
+  parent   Generation?  @relation("GenerationHistory", fields: [parentId], references: [id], onDelete: SetNull)
+  children Generation[] @relation("GenerationHistory")
+
+  @@index([parentId])
+  @@index([status])
+  @@map("generations")
+}
