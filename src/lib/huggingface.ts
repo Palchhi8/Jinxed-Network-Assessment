@@ -10,6 +10,7 @@ const hf = new HfInference(hfToken);
 
 export interface GenerateImageOptions {
   prompt: string;
+  model?: string;
   aspectRatio?: string;
   seed?: number;
 }
@@ -26,10 +27,7 @@ export interface GenerateImageResult {
 export async function generateImage(
   options: GenerateImageOptions
 ): Promise<GenerateImageResult> {
-  const { prompt, seed } = options;
-
-  // Stable free model
-  const model = "stabilityai/stable-diffusion-xl-base-1.0";
+  const { prompt, seed, model = "stabilityai/stable-diffusion-xl-base-1.0" } = options;
 
   try {
     console.log("[HF] Starting image generation...");

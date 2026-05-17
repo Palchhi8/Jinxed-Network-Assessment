@@ -37,6 +37,7 @@ export async function POST(req: NextRequest) {
     // 3. Call Hugging Face SDXL Turbo image generation
     const hfOptions = {
       prompt: prompt.trim(),
+      model: resolvedModel,
       aspectRatio: settings?.aspectRatio || '16:9',
       seed: typeof settings?.seed === 'number' ? settings.seed : undefined,
     };
