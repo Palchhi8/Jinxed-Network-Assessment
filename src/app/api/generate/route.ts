@@ -92,3 +92,24 @@ export async function POST(req: NextRequest) {
     );
   }
 }
+
+export async function GET() {
+  try {
+    const generations = await prisma.generation.findMany({
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return NextResponse.json(generations, { status: 200 });
+  } catch (error) {
+    console.error('Error in generations GET route:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to retrieve generations.';
+
+    return NextResponse.json(
+      { error: errorMessage },
+      { status: 500 }
+    );
+  }
+}
+

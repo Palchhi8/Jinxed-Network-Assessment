@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Container } from '@/components/Container';
 import {
   Sparkles,
@@ -8,15 +8,12 @@ import {
   Loader2,
   Image as ImageIcon,
   AlertTriangle,
-  RefreshCcw,
   Sliders,
-  Check,
   Download,
-  Info,
-  Clock,
-  Trash2
+  Info
 } from 'lucide-react';
 import { Generation, GenerationSettings } from '@/types';
+import { GallerySection } from '@/components/GallerySection';
 
 const SUGGESTIONS = [
   {
@@ -52,7 +49,27 @@ export default function Home() {
   const [loadingStatus, setLoadingStatus] = useState<string>('');
   const [currentGeneration, setCurrentGeneration] = useState<Generation | null>(null);
   const [generationHistory, setGenerationHistory] = useState<Generation[]>([]);
+  const [isGalleryLoading, setIsGalleryLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Fetch all generations from database on component mount
+  useEffect(() => {
+    const fetchGenerations = async () => {
+      try {
+        const response = await fetch('/api/generate');
+        if (response.ok) {
+          const data = await response.json();
+          setGenerationHistory(data);
+        }
+      } catch (err) {
+        console.error('Failed to load gallery history:', err);
+      } finally {
+        setIsGalleryLoading(false);
+      }
+    };
+
+    fetchGenerations();
+  }, []);
 
   // Advanced configurations
   const [showAdvanced, setShowAdvanced] = useState(false);
@@ -140,11 +157,7 @@ export default function Home() {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Clean local history list
-  const clearHistory = () => {
-    setGenerationHistory([]);
-    if (currentGeneration) setCurrentGeneration(null);
-  };
+
 
   return (
     <div className="flex-grow flex flex-col pb-20">
@@ -440,64 +453,13 @@ export default function Home() {
           </div>
         </div>
 
-        {/* Bottom Section: Historical Generative Log */}
-        {generationHistory.length > 0 && (
-          <div className="space-y-4 border-t border-zinc-850 pt-8 animate-in fade-in duration-300">
-            <div className="flex items-center justify-between">
-              <h2 className="text-sm font-bold text-zinc-300 tracking-wide uppercase flex items-center gap-2">
-                <Clock className="h-4 w-4 text-violet-400" />
-                <span>Generative Canvas History ({generationHistory.length})</span>
-              </h2>
-              <button
-                onClick={clearHistory}
-                className="flex items-center gap-1.5 px-2.5 py-1 text-xs text-zinc-500 hover:text-red-400 hover:border-red-950 bg-zinc-950/40 border border-zinc-850 rounded-lg transition-colors cursor-pointer"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-                <span>Clear List</span>
-              </button>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {generationHistory.map((item) => (
-                <div key={item.id} className="group rounded-xl border border-zinc-850 bg-zinc-900/20 p-3 hover:border-zinc-850 hover:bg-zinc-900/40 transition-all duration-200 flex flex-col justify-between">
-                  <div className="space-y-3">
-                    <div className="relative rounded-lg bg-zinc-950 border border-zinc-850 aspect-video overflow-hidden">
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={item.imageUrl || '/placeholders/placeholder_3.png'}
-                        alt={item.prompt}
-                        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-                      />
-                    </div>
-                    <div className="space-y-1">
-                      <div className="flex items-center justify-between">
-                        <span className="text-[9px] font-semibold text-zinc-500 font-mono uppercase">{item.model}</span>
-                        <span className="text-[9px] text-zinc-600 font-mono">{new Date(item.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                      </div>
-                      <p className="text-xs text-zinc-300 line-clamp-2 leading-relaxed italic">&ldquo;{item.prompt}&rdquo;</p>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-zinc-850/60 pt-3 mt-3 flex items-center justify-between">
-                    <span className="inline-flex items-center gap-1 text-[10px] text-emerald-400 font-semibold bg-emerald-950/20 border border-emerald-900/30 px-2 py-0.5 rounded-full">
-                      <Check className="h-3 w-3" />
-                      <span>{item.status}</span>
-                    </span>
-
-                    <button
-                      onClick={() => handleTweak(item)}
-                      disabled={isGenerating}
-                      className="flex items-center gap-1 text-[10px] text-violet-400 hover:text-violet-300 font-bold disabled:opacity-50 cursor-pointer"
-                    >
-                      <RefreshCcw className="h-3 w-3" />
-                      <span>Tweak/Use Parameters</span>
-                    </button>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
+        {/* Dynamic Studio Gallery */}
+        <GallerySection
+          generations={generationHistory}
+          isLoading={isGalleryLoading}
+          onTweak={handleTweak}
+          isGenerating={isGenerating}
+        />
       </Container>
     </div>
   );
