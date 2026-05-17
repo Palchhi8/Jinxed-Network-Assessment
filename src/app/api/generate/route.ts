@@ -1,7 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { GenerationStatus } from '@prisma/client';
 import { generateImage } from '@/lib/huggingface';
+
+const GenerationStatus = {
+  PROCESSING: 'PROCESSING',
+  COMPLETED: 'COMPLETED',
+  FAILED: 'FAILED',
+} as const;
 
 export async function POST(req: NextRequest) {
   let createdGenerationId: string | null = null;
