@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { Generation, GenerationSettings } from '@/types';
 import { GallerySection } from '@/components/GallerySection';
+import { Toaster, toast } from 'sonner';
 
 const SUGGESTIONS = [
   {
@@ -37,9 +38,7 @@ const SUGGESTIONS = [
 ];
 
 const MODELS = [
-  { id: 'mock-model-flux', name: 'Flux.1 Creative (Mock)', desc: 'Highest fidelity and prompt adherence' },
-  { id: 'mock-model-sd3', name: 'Stable Diffusion 3.5 (Mock)', desc: 'Excellent composition and realism' },
-  { id: 'mock-model-fast', name: 'Turbo Generator (Mock)', desc: 'Super fast, optimized for speed' }
+  { id: 'stabilityai/stable-diffusion-xl-base-1.0', name: 'SDXL 1.0 High-Resolution (Free)', desc: 'Full composition depth and artistic detail' }
 ];
 
 export default function Home() {
@@ -91,7 +90,7 @@ export default function Home() {
 
   // Advanced configurations
   const [showAdvanced, setShowAdvanced] = useState(false);
-  const [model, setModel] = useState('mock-model-flux');
+  const [model, setModel] = useState('stabilityai/stable-diffusion-xl-base-1.0');
   const [aspectRatio, setAspectRatio] = useState('16:9');
   const [guidanceScale, setGuidanceScale] = useState(7.5);
   const [steps, setSteps] = useState(30);
@@ -101,7 +100,7 @@ export default function Home() {
     setPrompt(text);
   };
 
-  // Run mock generation sequence
+  // Run Hugging Face generative cycle
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!prompt.trim() || isGenerating) return;
@@ -109,6 +108,9 @@ export default function Home() {
     setIsGenerating(true);
     setError(null);
     setLoadingStatus('Queueing generation task...');
+    toast.info('Initiating prompt synthesis pipeline...', {
+      description: 'Contacting Hugging Face neural inference engine.',
+    });
 
     // Simulate multi-step loading UX for a realistic feel
     const statusSteps = [
@@ -139,7 +141,7 @@ export default function Home() {
             aspectRatio,
             guidanceScale,
             steps,
-            seed: Math.floor(Math.random() * 9999999),
+            seed: Math.floor(Math.random() * 999999),
           },
         }),
       });
@@ -152,12 +154,19 @@ export default function Home() {
 
       // Add to generation record
       setCurrentGeneration(data);
+      toast.success('Asset generated successfully!', {
+        description: 'Instantly synced in Supabase history.',
+      });
       
       // Refresh the gallery instantly from the backend
       await refreshGallery();
     } catch (err) {
       console.error(err);
-      setError(err instanceof Error ? err.message : 'Failed to communicate with the mock generator endpoint.');
+      const errorText = err instanceof Error ? err.message : 'Failed to communicate with the generator endpoint.';
+      setError(errorText);
+      toast.error('Generation pipeline failed', {
+        description: errorText,
+      });
       
       // Refresh the gallery even on failure to show the FAILED record immediately
       await refreshGallery();
@@ -176,6 +185,9 @@ export default function Home() {
       if (historyItem.settings.guidanceScale) setGuidanceScale(historyItem.settings.guidanceScale);
       if (historyItem.settings.steps) setSteps(historyItem.settings.steps);
     }
+    toast.success('Studio configuration recalled!', {
+      description: 'Prompt and advanced settings populated.',
+    });
     // Scroll smoothly back to top prompt interface
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -238,9 +250,9 @@ export default function Home() {
                   <span>Advanced Settings</span>
                 </button>
 
-                <div className="text-[11px] text-zinc-500 flex items-center gap-1.5">
+                <div className="text-[11px] text-zinc-500 flex items-center gap-1.5 font-mono">
                   <Info className="h-3 w-3 text-zinc-600" />
-                  <span>Interactive Mock Engine</span>
+                  <span>Hugging Face Diffusion Core</span>
                 </div>
               </div>
 
@@ -484,6 +496,9 @@ export default function Home() {
           isGenerating={isGenerating}
         />
       </Container>
+      
+      {/* Toast provider container */}
+      <Toaster theme="dark" position="bottom-right" richColors closeButton />
     </div>
   );
 }

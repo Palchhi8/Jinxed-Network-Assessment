@@ -16,26 +16,26 @@ export function GenerationCard({ item, onTweak, disabled }: GenerationCardProps)
   });
 
   return (
-    <div className="group rounded-xl border border-zinc-850 bg-zinc-900/20 p-3 hover:border-zinc-800 hover:bg-zinc-900/40 transition-all duration-200 flex flex-col justify-between">
-      <div className="space-y-3">
+    <div className="group rounded-2xl border border-zinc-800 bg-zinc-900/10 p-4 hover:border-violet-500/30 hover:bg-zinc-900/20 shadow-sm hover:shadow-md hover:shadow-violet-950/5 transition-all duration-300 flex flex-col justify-between">
+      <div className="space-y-4">
         {/* Render Image or Status Placeholder */}
-        <div className="relative rounded-lg bg-zinc-950 border border-zinc-850 aspect-video overflow-hidden">
+        <div className="relative rounded-xl bg-zinc-950 border border-zinc-900 aspect-video overflow-hidden">
           {item.status === 'COMPLETED' && item.imageUrl ? (
             <>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={item.imageUrl}
                 alt={item.prompt}
-                className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+                className="w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
               />
               {/* Download overlay on hover */}
-              <div className="absolute inset-0 bg-zinc-950/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-3 transition-opacity duration-200">
+              <div className="absolute inset-0 bg-zinc-950/60 opacity-0 group-hover:opacity-100 flex items-center justify-center gap-3 transition-opacity duration-350">
                 <a
                   href={item.imageUrl}
                   download={`generation_${item.id}.png`}
                   target="_blank"
                   rel="noreferrer"
-                  className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-900 border border-zinc-800 text-zinc-200 hover:text-white hover:border-zinc-700 transition-colors"
+                  className="flex h-10 w-10 items-center justify-center rounded-xl bg-zinc-900 border border-zinc-850 text-zinc-200 hover:text-white hover:border-violet-500/40 hover:bg-violet-950/10 transition-all duration-200"
                   title="Download Asset"
                 >
                   <Download className="h-4 w-4" />

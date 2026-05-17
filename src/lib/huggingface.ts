@@ -1,8 +1,11 @@
-import { HfInference } from '@huggingface/inference';
+import { HfInference } from "@huggingface/inference";
 
-// Initialize Hugging Face Inference client
-// Uses HF_TOKEN or HF_ACCESS_TOKEN if configured in .env (recommended to prevent rate-limits)
-const hfToken = process.env.HF_TOKEN || process.env.HF_ACCESS_TOKEN || '';
+const hfToken = process.env.HUGGINGFACE_API_KEY;
+
+if (!hfToken) {
+  throw new Error("HUGGINGFACE_API_KEY is missing in .env");
+}
+
 const hf = new HfInference(hfToken);
 
 export interface GenerateImageOptions {
@@ -18,58 +21,58 @@ export interface GenerateImageResult {
 }
 
 /**
- * Generates an image using the Hugging Face free Inference API.
- * Leverages stabilityai/sdxl-turbo for near-instant, high-quality free generations.
+ * Generate AI image using Hugging Face Inference API
  */
-export async function generateImage(options: GenerateImageOptions): Promise<GenerateImageResult> {
-  const {
-    prompt,
-    seed,
-  } = options;
+export async function generateImage(
+  options: GenerateImageOptions
+): Promise<GenerateImageResult> {
+  const { prompt, seed } = options;
 
-  const model = 'stabilityai/sdxl-turbo';
+  // Stable free model
+  const model = "stabilityai/stable-diffusion-xl-base-1.0";
 
   try {
-    console.log('[Hugging Face] Starting free image generation...');
-    console.log('[Hugging Face] Prompt:', prompt);
+    console.log("[HF] Starting image generation...");
+    console.log("[HF] Prompt:", prompt);
 
-    // Call the text-to-image API
-    const responseBlob = await hf.textToImage({
+    // Generate image
+    const response = await hf.textToImage({
       model,
       inputs: prompt,
       parameters: {
-        // SDXL Turbo is optimized to run in a single high-quality step
-        num_inference_steps: 1,
-        guidance_scale: 0.0, // SDXL Turbo works best with 0.0 guidance
+        num_inference_steps: 20,
         ...(seed !== undefined ? { seed } : {}),
       },
     });
 
-    console.log('[Hugging Face] Response blob received successfully.');
+    console.log("[HF] Image response received.");
 
-    // Convert binary blob response to Base64 Data URL
-    const blob = responseBlob as unknown as Blob;
-    const buffer = await blob.arrayBuffer();
-    if (!buffer || buffer.byteLength === 0) {
-      throw new Error('Hugging Face API returned an empty image binary blob.');
+    // Convert Blob -> Buffer -> Base64
+    const blob = response as unknown as Blob;
+    const arrayBuffer = await blob.arrayBuffer();
+
+    if (!arrayBuffer || arrayBuffer.byteLength === 0) {
+      throw new Error("Empty image response from Hugging Face");
     }
 
-    const base64 = Buffer.from(buffer).toString('base64');
-    const imageUrl = `data:image/jpeg;base64,${base64}`;
+    const base64 = Buffer.from(arrayBuffer).toString("base64");
 
-    console.log('[Hugging Face] Image converted to Base64 Data URL successfully.');
+    const imageUrl = `data:image/png;base64,${base64}`;
+
+    console.log("[HF] Base64 image created successfully.");
 
     return {
       imageUrl,
-      seed: seed || Math.floor(Math.random() * 9999999),
+      seed: seed || Math.floor(Math.random() * 1000000),
       model,
     };
   } catch (error) {
-    console.error('[Hugging Face] Generation Error:', error);
+    console.error("[HF] Generation Error:", error);
+
     throw new Error(
       error instanceof Error
         ? error.message
-        : 'Hugging Face free image generation failed.'
+        : "Hugging Face image generation failed"
     );
   }
 }

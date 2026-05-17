@@ -29,30 +29,33 @@ export function GallerySection({ generations, isLoading, onTweak, isGenerating }
       {isLoading ? (
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
           {[1, 2, 3].map((num) => (
-            <div key={num} className="rounded-xl border border-zinc-850 bg-zinc-900/10 p-3 space-y-4 animate-pulse">
-              <div className="rounded-lg bg-zinc-950 aspect-video w-full" />
-              <div className="space-y-2">
-                <div className="h-2.5 bg-zinc-800 rounded w-1/3" />
-                <div className="h-2 bg-zinc-800 rounded w-full" />
-                <div className="h-2 bg-zinc-800 rounded w-5/6" />
+            <div key={num} className="rounded-2xl border border-zinc-800 bg-zinc-900/5 p-4 space-y-4 animate-pulse">
+              <div className="rounded-xl bg-zinc-950 aspect-video w-full border border-zinc-900" />
+              <div className="space-y-3">
+                <div className="h-3 bg-zinc-800 rounded-md w-1/4" />
+                <div className="h-2.5 bg-zinc-800 rounded-md w-full" />
+                <div className="h-2.5 bg-zinc-800 rounded-md w-5/6" />
               </div>
               <div className="border-t border-zinc-850/60 pt-3 mt-3 flex justify-between items-center">
-                <div className="h-4 bg-zinc-800 rounded w-1/4" />
-                <div className="h-3 bg-zinc-800 rounded w-1/4" />
+                <div className="h-4 bg-zinc-800 rounded-md w-1/3" />
+                <div className="h-4 bg-zinc-800 rounded-md w-1/4" />
               </div>
             </div>
           ))}
         </div>
       ) : generations.length === 0 ? (
-        /* Elegant Empty State */
-        <div className="rounded-2xl border border-zinc-850 bg-zinc-900/10 p-12 text-center max-w-lg mx-auto space-y-4">
-          <div className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-zinc-950/40 border border-zinc-850 text-zinc-600">
-            <ImageIcon className="h-6 w-6" />
+        /* Elegant Premium Empty State */
+        <div className="relative overflow-hidden rounded-2xl border border-zinc-800/80 bg-zinc-900/10 p-16 text-center max-w-xl mx-auto space-y-6 shadow-sm shadow-zinc-950/20">
+          <div className="absolute -inset-x-20 -top-20 h-40 bg-violet-600/5 blur-3xl pointer-events-none rounded-full" />
+          
+          <div className="relative inline-flex h-16 w-16 items-center justify-center rounded-2xl bg-zinc-900 border border-zinc-800 text-violet-400/80 shadow-inner shadow-violet-500/5">
+            <ImageIcon className="h-7 w-7" />
           </div>
-          <div className="space-y-1">
-            <h3 className="text-sm font-bold text-zinc-300">No Generations Recorded</h3>
-            <p className="text-xs text-zinc-500 max-w-[260px] mx-auto leading-relaxed">
-              Your creation history is currently empty. Describe your creative vision above to kick off the studio.
+          
+          <div className="relative space-y-2">
+            <h3 className="text-base font-bold text-zinc-200 tracking-tight">Start creating your first AI masterpiece</h3>
+            <p className="text-xs text-zinc-500 max-w-[320px] mx-auto leading-relaxed">
+              Your generation history is currently empty. Enter a descriptive text prompt above to authorize the neural engine and begin your creative workflow.
             </p>
           </div>
         </div>
